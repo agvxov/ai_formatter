@@ -12,10 +12,18 @@
     */
     #include <stdio.h>
 
+	#define LINE_WIDTH 80
+	#define MAX_SHIMS  LINE_WIDTH - 1
+
     int mystate;
 
     int accumulator = 0;
 
+	FILE * build_file;
+	int schemantic[MAX_SHIMS];
+	int schim = 0;
+
+	#define STEP_SCHEMANTIC fread(schemantic, MAX_SHIMS, 1, build_file)
     #define ECHOS(s) fwrite(s, strlen(s), 1, yyout)
 
     #define EOL '\n'
@@ -29,7 +37,7 @@ shift           (<<)|(>>)
 
 word    {identifier}|{comment_marker}|{assignment}|{shift}|{modify}
 
-%x NORMALIZE ACCUMULATE
+%x NORMALIZE ACCUMULATE BUILD
 %x IN_STRING
 %option noyywrap nodefault
 %%
@@ -76,6 +84,20 @@ word    {identifier}|{comment_marker}|{assignment}|{shift}|{modify}
             }
 }
 
+<BUILD>{
+[ ]|\t      { ; }
+{word}|.    {
+                ECHO;
+                for (int i = 0; i < schemantic[schim]; i++) {
+					ECHOS(" ");
+				}
+				++schim;
+            }
+\n			{
+				STEP_SCHEMANTIC;
+			}
+}
+
 <IN_STRING>{
 \\\"    {
             if (mystate == NORMALIZE) {
@@ -107,6 +129,11 @@ signed main(const int argc, const char * const * const argv) {
     } else
     if (!strcmp(argv[1], "accumulate")) {
         mystate = ACCUMULATE;
+    } else
+    if (!strcmp(argv[1], "build")) {
+        mystate = BUILD;
+		build_file = fopen("build_file", "rb");
+		STEP_SCHEMANTIC;
     } else {
         return 1;
     }

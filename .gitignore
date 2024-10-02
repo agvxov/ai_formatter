@@ -2,3 +2,4 @@ venv/
 *.yy.*
 *.out
 __pycache__/
+*.norm

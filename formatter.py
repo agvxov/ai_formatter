@@ -8,39 +8,29 @@ from keras import layers
 
 from config import *
 import data
+import tard_wrangler
 
 dataset = data.get_data()
 
+# XXX: add more conv layers
 model = keras.Sequential([
+	keras.Input(shape=(3, LINE_WIDTH, 1)),
 	layers.Conv2D(
 		filters=16,
 		kernel_size=(3,3),
 		strides=(1,1),
 		activation='relu',
 		padding='valid',
-		input_shape=(3,LINE_WIDTH,1)
 	),
-	#layers.Conv2D(
-	#	filters=32,
-	#	kernel_size=(3,7),
-	#	activation='relu',
-	#	padding='valid'
-	#),
-	#layers.Conv2D(
-	#	filters=64,
-	#	kernel_size=(3,13),
-	#	activation='relu',
-	#	padding='valid'
-	#),
 	layers.Flatten(),
 	layers.Dense(64, activation='relu'),
-	layers.Dense(MAX_SHIMS, activation='softmax')
+	layers.Dense(MAX_SHIMS) #activation='softmax'
 ])
 
 model.compile(
 	optimizer='adam',
 	loss='mse',
-	metrics=['accuracy']
+	metrics=['mae']
 )
 
 model.fit(dataset['in'], dataset['out'],
@@ -49,3 +39,7 @@ model.fit(dataset['in'], dataset['out'],
     epochs=50,
     shuffle=True,
 )
+
+prediction = model.predict(dataset['in'])[0]
+prediction = prediction.astype(np.uint8).tobytes()
+tard_wrangler.build("data/xop.c.norm", prediction)

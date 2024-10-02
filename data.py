@@ -1,7 +1,7 @@
-import subprocess
 import numpy as np
 
 from config import *
+import tard_wrangler
 
 def get_data():
 	r = []
@@ -25,25 +25,27 @@ def get_data():
 				l = [ord(i) for i in l]
 				ascii_list += l
 			n = np.reshape(ascii_list, (3, -1, 1))
-			n = np.expand_dims(n, axis=0)
 			r.append(n)
+		r = np.array(r)
 		return r
 	def get_whitespace(path : str) -> [int]:
 		'''XXX returns the whitespace list of every middle line'''
 		r = []
-		output_file = "muf_file.txt"
-		process = subprocess.Popen(
-					"converter.out accumulate " + path + " > " + output_file,
-					shell=True,
-		)
-		with open(output_file, 'r') as file:
+		output = "muf_file.txt"
+		tard_wrangler.accumulate(INPUT_FILE, output)
+		with open(output, 'r') as file:
 			for n, line in enumerate(file):
 				if ((n + 2) % 3) != 0: continue
-				r.append(eval(line))
+				l = eval(line)
+				l = l + [0] * (MAX_SHIMS - len(l))
+				r.append(l)
+		return r
+	def whitespace_to_np_array(spaces : []) -> np.array:
+		r = spaces
+		r = np.array(r).reshape(20, -1)
 		return r
 	source = source_to_np_array(get_source(INPUT_FILE))
-	whitespace = get_whitespace(INPUT_FILE)
-	whitespace = [np.array(i) for i in whitespace]
+	whitespace = whitespace_to_np_array(get_whitespace(INPUT_FILE))
 	r = {'in': source, 'out': whitespace}
 	assert len(r['in']) == len(r['in']), "data in and out sizes were inconsistent."
 	return r
@@ -51,3 +53,4 @@ def get_data():
 if __name__ == "__main__":
 	dataset = get_data()
 	print(dataset)
+	print(dataset['in'].shape, dataset['out'].shape)
