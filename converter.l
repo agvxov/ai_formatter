@@ -11,19 +11,22 @@
              i wonder if hopefully the AI can just realize theres never spaces there
     */
     #include <stdio.h>
+    #include <stdbool.h>
 
-	#define LINE_WIDTH 80
-	#define MAX_SHIMS  LINE_WIDTH - 1
+    #define LINE_WIDTH 80
+    #define MAX_SHIMS  LINE_WIDTH - 1
 
     int mystate;
 
+    bool was_word = false;
+
     int accumulator = 0;
 
-	FILE * build_file;
-	int schemantic[MAX_SHIMS];
-	int schim = 0;
+    FILE * build_file;
+    int schemantic[MAX_SHIMS];
+    int schim = 0;
 
-	#define STEP_SCHEMANTIC fread(schemantic, MAX_SHIMS, 1, build_file)
+    #define STEP_SCHEMANTIC fread(schemantic, MAX_SHIMS, 1, build_file)
     #define ECHOS(s) fwrite(s, strlen(s), 1, yyout)
 
     #define EOL '\n'
@@ -35,7 +38,8 @@ modify          [+-]{2}
 assignment      ([+-/*%]|(<<)|(>>))=
 shift           (<<)|(>>)
 
-word    {identifier}|{comment_marker}|{assignment}|{shift}|{modify}
+word    {identifier}
+special {comment_marker}|{assignment}|{shift}|{modify}
 
 %x NORMALIZE ACCUMULATE BUILD
 %x IN_STRING
@@ -52,9 +56,16 @@ word    {identifier}|{comment_marker}|{assignment}|{shift}|{modify}
                 ECHO;
                 BEGIN IN_STRING;
             }
-{word}|.    {
+{word}      {
+                if (was_word) {
+                    ECHOS(" ");
+                }
                 ECHO;
-                ECHOS(" ");
+                was_word = true;
+            }
+{special}|. {
+                ECHO;
+                was_word = false;
             }
 \n          {
                 ECHO;
@@ -72,7 +83,16 @@ word    {identifier}|{comment_marker}|{assignment}|{shift}|{modify}
 \"          {
                 BEGIN IN_STRING;
             }
-{word}|.    {
+{word}      {
+                if (was_word) {
+                    --accumulator;
+                }
+                was_word = true;
+                printf("%d, ", accumulator);
+                accumulator = 0;
+            }
+{special}|. {
+                was_word = false;
                 printf("%d, ", accumulator);
                 accumulator = 0;
             }
@@ -89,13 +109,13 @@ word    {identifier}|{comment_marker}|{assignment}|{shift}|{modify}
 {word}|.    {
                 ECHO;
                 for (int i = 0; i < schemantic[schim]; i++) {
-					ECHOS(" ");
-				}
-				++schim;
+                    ECHOS(" ");
+                }
+                ++schim;
             }
-\n			{
-				STEP_SCHEMANTIC;
-			}
+\n          {
+                STEP_SCHEMANTIC;
+            }
 }
 
 <IN_STRING>{
@@ -132,8 +152,8 @@ signed main(const int argc, const char * const * const argv) {
     } else
     if (!strcmp(argv[1], "build")) {
         mystate = BUILD;
-		build_file = fopen("build_file", "rb");
-		STEP_SCHEMANTIC;
+        build_file = fopen("build_file", "rb");
+        STEP_SCHEMANTIC;
     } else {
         return 1;
     }

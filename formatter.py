@@ -17,7 +17,7 @@ model = keras.Sequential([
 	keras.Input(shape=(3, LINE_WIDTH, 1)),
 	layers.Conv2D(
 		filters=16,
-		kernel_size=(3,3),
+		kernel_size=(3,5),
 		strides=(1,1),
 		activation='relu',
 		padding='valid',
