@@ -24,6 +24,7 @@ model = keras.Sequential([
 	),
 	layers.Flatten(),
 	layers.Dense(64, activation='relu'),
+	layers.Dense(64, activation='relu'),
 	layers.Dense(MAX_SHIMS) #activation='softmax'
 ])
 

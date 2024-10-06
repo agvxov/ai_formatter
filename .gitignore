@@ -3,3 +3,5 @@ venv/
 *.out
 __pycache__/
 *.norm
+data/linux/
+*.pkl

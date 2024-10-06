@@ -4,12 +4,6 @@
    @STOP
  */
 %{
-    /* NOTE: this shall be compiled as a shared library so python may call in
-    */
-    /* XXX: we have a problem on nuking system includes;
-             this fucks with trying to be language agnostic;
-             i wonder if hopefully the AI can just realize theres never spaces there
-    */
     #include <stdio.h>
     #include <stdbool.h>
 
@@ -23,10 +17,10 @@
     int accumulator = 0;
 
     FILE * build_file;
-    int schemantic[MAX_SHIMS];
+    char schemantic[MAX_SHIMS];
     int schim = 0;
 
-    #define STEP_SCHEMANTIC fread(schemantic, MAX_SHIMS, 1, build_file)
+    #define STEP_SCHEMANTIC fread(schemantic, MAX_SHIMS, sizeof(char), build_file)
     #define ECHOS(s) fwrite(s, strlen(s), 1, yyout)
 
     #define EOL '\n'
@@ -108,7 +102,7 @@ special {comment_marker}|{assignment}|{shift}|{modify}
 [ ]|\t      { ; }
 {word}|.    {
                 ECHO;
-                for (int i = 0; i < schemantic[schim]; i++) {
+                for (char i = 0; i < schemantic[schim]; i++) {
                     ECHOS(" ");
                 }
                 ++schim;
