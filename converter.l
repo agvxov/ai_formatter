@@ -18,14 +18,17 @@
 
     FILE * build_file;
     char schemantic[MAX_SHIMS];
-    int schim = 0;
+    int schim;
 
-    #define STEP_SCHEMANTIC fread(schemantic, MAX_SHIMS, sizeof(char), build_file)
+    #define STEP_SCHEMANTIC do { \
+			schim = 0; \
+			int re = fread(schemantic, sizeof(char), MAX_SHIMS, build_file); \
+			if (re != sizeof(char)*MAX_SHIMS) { printf("- %d\n", re); exit(2); } \
+		} while (0)
     #define ECHOS(s) fwrite(s, strlen(s), 1, yyout)
-
-    #define EOL '\n'
 %}
 
+	// != is missing
 comment_marker  (\/\*)|(\*\/)
 identifier      \$?[A-Za-z0-9_]+
 modify          [+-]{2}
@@ -35,8 +38,16 @@ shift           (<<)|(>>)
 word    {identifier}
 special {comment_marker}|{assignment}|{shift}|{modify}
 
-%x NORMALIZE ACCUMULATE BUILD
 %x IN_STRING
+
+    // Keep all but the required whitespaces
+%x NORMALIZE
+    // Count the non-required whitespaces and write python arrays
+%x ACCUMULATE
+    // Reconstruct normalized file based on binary whitespace count arrays
+%x BUILD
+
+%option yylineno
 %option noyywrap nodefault
 %%
     BEGIN mystate;
@@ -61,10 +72,7 @@ special {comment_marker}|{assignment}|{shift}|{modify}
                 ECHO;
                 was_word = false;
             }
-\n          {
-                ECHO;
-                return EOL;
-            }
+\n          { ECHO; }
 }
 
 <ACCUMULATE>{
@@ -99,15 +107,17 @@ special {comment_marker}|{assignment}|{shift}|{modify}
 }
 
 <BUILD>{
-[ ]|\t      { ; }
-{word}|.    {
-                ECHO;
+[ ]         { ECHO; }
+{word}|{special}|.    {
                 for (char i = 0; i < schemantic[schim]; i++) {
                     ECHOS(" ");
                 }
+                ECHO;
+
                 ++schim;
             }
-\n          {
+\n          { // XXX we find the last newline and still step, resulting in an error
+				ECHO;
                 STEP_SCHEMANTIC;
             }
 }
@@ -147,6 +157,7 @@ signed main(const int argc, const char * const * const argv) {
     if (!strcmp(argv[1], "build")) {
         mystate = BUILD;
         build_file = fopen("build_file", "rb");
+		if (!build_file) { exit(1); }
         STEP_SCHEMANTIC;
     } else {
         return 1;
@@ -154,7 +165,7 @@ signed main(const int argc, const char * const * const argv) {
 
     yyin = fopen(argv[2], "r");
 
-    while(yylex() == EOL) { ; }
+    yylex();
 
     return 0;
 }

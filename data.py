@@ -1,10 +1,13 @@
 from glob import glob
 import numpy as np
 import pickle
+import sys
 from sys import argv
 
 from config import *
 import tard_wrangler
+
+MAX_DATA_LIMIT = sys.maxsize
 
 def get_source(path : str) -> [str]:
 	'''returns source file in $SOURCE_LINE_BATCH_SIZE line batches'''
@@ -54,11 +57,17 @@ def whitespace_to_np_array(spaces : []) -> np.array:
 def compile_data():
 	r = {'in': [], 'out': [], 'src': []}
 	for n, path in enumerate(glob(COMPILE_INPUT_DIRECTORY + "/*.c")):
-		if n > 47: break # XXX
-		acc_path = path + ".acc"
+		if n > MAX_DATA_LIMIT: break # XXX
+		acc_path  = path + ".acc"
+		norm_path = path + ".norm"
 		r['src'].append(path)
-		r['in']  += get_source(path)
-		r['out'] += read_acc(acc_path)
+		source_batches = get_source(norm_path)
+		accumulation   = read_acc(acc_path)
+		assert len(source_batches) == len(accumulation), (
+			f"Some retard fucked up strings in {path}."
+		)
+		r['in']  += source_batches
+		r['out'] += accumulation
 	r['in']  = source_to_np_array(r['in'])
 	r['out'] = whitespace_to_np_array(r['out'])
 	return r
