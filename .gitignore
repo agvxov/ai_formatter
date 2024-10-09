@@ -1,7 +1,8 @@
 venv/
 *.yy.*
 *.out
+*.bin
 __pycache__/
 *.norm
-data/linux/
+training_set/linux/
 *.pkl

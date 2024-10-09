@@ -144,7 +144,12 @@ special {comment_marker}|{assignment}|{shift}|{modify}
 
 signed main(const int argc, const char * const * const argv) {
     if (argc < 3) {
-        puts("Usage: converter <mode> <file>");
+        puts(
+			"Usage:\n"
+			"$ converter normalize  [<file>|^<string>]\n"
+			"$ converter accumulate [<file>|^<string>]\n"
+			"$ converter build      [<file>|^<string>] <schemantic-file>\n"
+		);
         return 1;
     }
 
@@ -155,17 +160,33 @@ signed main(const int argc, const char * const * const argv) {
         mystate = ACCUMULATE;
     } else
     if (!strcmp(argv[1], "build")) {
+		if (argc < 4) { exit(4); }
         mystate = BUILD;
-        build_file = fopen("build_file", "rb");
+        build_file = fopen(argv[3], "rb");
 		if (!build_file) { exit(1); }
         STEP_SCHEMANTIC;
     } else {
         return 1;
     }
 
-    yyin = fopen(argv[2], "r");
+	char * input;
+	if (argv[2][0] == '^') {
+		input = (char*)argv[2]+1;
+	} else {
+		FILE * f = fopen(argv[2], "r");
+		if(!f){ exit(3); }
+		fseek(f, 0, SEEK_END);
+		int flen = ftell(f);
+		rewind(f);
+		input = malloc(flen+1);
+		input[flen] = '\00';
+		fread(input, flen, sizeof(char), f);
+		fclose(f);
+	}
 
+	YY_BUFFER_STATE const b = yy_scan_string(input);
     yylex();
+	yy_delete_buffer(b);
 
     return 0;
 }

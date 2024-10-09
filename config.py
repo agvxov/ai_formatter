@@ -2,5 +2,5 @@ LINE_WIDTH = 80
 MAX_SHIMS  = LINE_WIDTH - 1
 SOURCE_LINE_BATCH_SIZE = 3
 
-COMPILE_INPUT_DIRECTORY = "data/linux/"
-MODEL_DIRECTORY = "models/"
+COMPILE_INPUT_DIRECTORY = "training_set/linux/"
+MODEL_DIRECTORY = "trained_models/"

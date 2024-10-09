@@ -1,29 +1,35 @@
 import subprocess
+import shlex
 import numpy as np
 
 from config import *
 import data
 
-def accumulate(path : str, output : str) -> None:
-	process = subprocess.Popen(
-				"converter.out accumulate " + path + " > " + output,
-				shell=True,
-	)
+BUILD_FILE = "build_file.bin"
 
-def full_predict(path : str, model) -> []:
-	r = []
-	myinput = data.source_to_np_array(data.get_source(path))
-	for i in myinput:
-		r += model.predict(np.expand_dims(i, axis=0)).astype(np.uint8).tobytes()
+def build(what : str, predictions : []) -> None:
+	print(predictions)
+	predictions = b''.join([i.to_bytes(1, byteorder='big', signed=False) for i in predictions])
+	with open(BUILD_FILE, "wb") as f: f.write(predictions)
+	shell_what = shlex.quote(what)
+	shell_what = shell_what[0] + '^' + shell_what[1:]
+	process = subprocess.Popen(
+				"converter.out build " + shell_what + " " + BUILD_FILE,
+				shell=True,
+				stdout=subprocess.PIPE,
+	)
+	r, _ = process.communicate()
+	r = r.decode('utf-8')
 	return r
 
-def build(path : str, predictions : []) -> None:
-	predictions = b''.join([i.to_bytes(1, byteorder='big', signed=False) for i in predictions])
-	with open("build_file", "wb") as f: f.write(predictions)
-	process = subprocess.Popen(
-				"converter.out build " + path + " > out.c",
-				shell=True,
-	)
-
-def cat_build():
-	with open("out.c") as f: print(f.read())
+def full_predict(path : str, normpath : str, model) -> [str]:
+	r = ["\n"]
+	batches = data.get_source(path, normpath)
+	for b in batches:
+		b[0] = r[-1]
+		myinput = data.source_to_np_array([b])
+		prediction = model.predict(myinput).astype(np.uint8).tobytes()
+		predicted_string = build(b[1], prediction)
+		r += predicted_string + "\n"
+	r = ''.join(r)
+	return r
