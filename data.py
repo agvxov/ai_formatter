@@ -10,8 +10,6 @@ import tard_wrangler
 #MAX_DATA_LIMIT = sys.maxsize
 MAX_DATA_LIMIT = 1000
 
-DATASET_FILE = "training_set/dataset-linux.pkl"
-
 def get_source(path : str, normpath : str) -> [str]:
 	'''returns source file in $SOURCE_LINE_BATCH_SIZE line batches'''
 	r = []

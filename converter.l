@@ -28,11 +28,10 @@
     #define ECHOS(s) fwrite(s, strlen(s), 1, yyout)
 %}
 
-	// != is missing
 comment_marker  (\/\*)|(\*\/)
 identifier      \$?[A-Za-z0-9_]+
 modify          [+-]{2}
-assignment      ([+-/*%]|(<<)|(>>))=
+assignment      ([+-/*%!]|(<<)|(>>))=
 shift           (<<)|(>>)
 
 word    {identifier}

@@ -11,7 +11,7 @@ from config import *
 
 @tf.function
 def custom_weighted_loss(y_true, y_pred):
-	weights = tf.linspace(1.0, 0.1, tf.shape(y_pred)[-1])
+	weights = tf.linspace(2.0, 0.1, tf.shape(y_pred)[-1])
 	return tf.reduce_mean(tf.square((y_true - y_pred) * weights))
 
 def make_model(dataset : np.array) -> keras.Model:
@@ -28,12 +28,11 @@ def make_model(dataset : np.array) -> keras.Model:
 		layers.Flatten(),
 		layers.Dense(64, activation='relu'),
 		layers.Dense(64, activation='relu'),
-		layers.Dense(MAX_SHIMS) #activation='softmax'
+		layers.Dense(MAX_SHIMS)
 	])
 
 	model.compile(
 		optimizer='adam',
-		#loss='mse',
 		loss=custom_weighted_loss,
 		metrics=['mae']
 	)
